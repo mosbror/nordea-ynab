@@ -6,7 +6,7 @@ $dotenv->load();
 function decryptFilename($cipher_data)
 {
     $secret_key = $_ENV["FILE_ENC_SECRET"];
-    $cipher = "aes-128-gcm";
+    $cipher = "aes-128-cbc";
     if (in_array($cipher, openssl_get_cipher_methods())) {
         $ivlen = openssl_cipher_iv_length($cipher);
         $iv = openssl_random_pseudo_bytes($ivlen);
