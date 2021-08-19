@@ -21,8 +21,8 @@ function encryptFilename($message_to_encrypt)
         $hash = openssl_encrypt($message_to_encrypt, $cipher, $secret_key, $options = 0, $iv, $tag);
         return [$hash, $cipher, $iv, $tag];
     }
+    return false;
 }
-
 
 $source = $_FILES["upfile"]["tmp_name"];
 $source_data = [];
@@ -35,12 +35,24 @@ foreach (file($source) as $f) {
 foreach ($source_data as $row) {
     if (validateDate($row[0])) {
 
+        $match = preg_match("/^kortköp\s(\d{6})\s(.*?)$/ui",trim($row[5]),$matches);
+
+        if($match){
+            $payee = trim($matches[2]);
+            $date_array = list($year,$month,$day) = str_split($matches[1],2);
+            $date = date('Y-m-d',strtotime("20".$year."-".$month."-".$day));
+        }else{
+            $payee = trim($row[5]);
+            $date = $row[0];
+        }
+        if(!validateDate($date)){
+            $date = $row[0];
+        }
+
         if (trim($row[2]) == "") {
-            $payee = $row[5];
             $outflow = null;
             $inflow = (str_replace(",", ".", $row[1]) * 1);
         } else {
-            $payee = $row[5];
             $outflow = (str_replace(",", ".", $row[1]) * -1);
             $inflow = null;
         }
@@ -48,11 +60,11 @@ foreach ($source_data as $row) {
             echo '<i>Ingoring reserved amount: "' . $row[5] . '" ' . $outflow . 'kr</i><br />';
             continue;
         }
-
+        $memo = "";
         $destination_data[] = [
-            $row[0], // Date
+            trim($date), // Date
             $payee, // Payee
-            "", // Memo
+            $memo, // Memo
             $outflow, // Outflow
             $inflow, // Inflow
         ];
